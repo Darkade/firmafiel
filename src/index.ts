@@ -1,13 +1,13 @@
-"use strict";
-const crypto = require("crypto");
-const hash = require("object-hash");
-// const ocsp = require("ocsp");
-const axios = require("axios");
-const forge = require("node-forge");
-const Buffer = require("buffer/").Buffer;
-//const Buffer = require("buffer-ponyfill");
+import * as crypto from "crypto";
+import hash from "object-hash";
+import axios from "axios";
+import * as forge from "node-forge";
+let Buffer = require('buffer/').Buffer
+
 
 class firmafiel {
+  map: Map<string, string>;
+
   constructor() {
     this.map = new Map();
     this.map.set("https://cfdi.sat.gob.mx/edofiel", "cfdi.sat.gob.mx");
@@ -15,7 +15,7 @@ class firmafiel {
   }
 
   //verifica un certificado en url remota
-  verificarCertificado({ certificado, url }) {
+  verificarCertificado(certificado: forge.pki.Certificate, url: string) {
     return axios.post(
       url ? url : "https://llucio-openssl.k8s.funcionpublica.gob.mx/cert",
       {
@@ -29,8 +29,8 @@ class firmafiel {
     );
   }
 
-  verificarCertificadoFromBuffer({ derBuffer, url }) {
-    const certificado = this.certBufferToPem({ derBuffer: derBuffer });
+  verificarCertificadoFromBuffer(derBuffer: Buffer, url: string) {
+    const certificado = this.certBufferToPem(derBuffer);
     return axios.post(
       url ? url : "https://llucio-openssl.k8s.funcionpublica.gob.mx/cert",
       {
@@ -45,7 +45,7 @@ class firmafiel {
     // return "hola";
   }
 
-  certBufferToPem({ derBuffer }) {
+  certBufferToPem(derBuffer: Buffer) {
     try {
       var forgeBuffer = forge.util.createBuffer(derBuffer.toString("binary"));
       //hay que codificarlo como base64
@@ -62,7 +62,7 @@ class firmafiel {
   }
 
   //convierte un certificado en formato pem a un certificado forge
-  pemToForgeCert({ pem }) {
+  pemToForgeCert(pem: forge.pki.PEM) {
     try {
       var pki = forge.pki;
       return pki.certificateFromPem(pem);
@@ -72,8 +72,8 @@ class firmafiel {
   }
 
   //recibe el certificado en formato pem y un rfc y devuelve true si la llave publica corresponde con el rfc , de l ocontrario devuelve false
-  validaRfcFromPem({ pem, rfc }) {
-    const cer = this.pemToForgeCert({ pem: pem });
+  validaRfcFromPem(pem: forge.pki.PEM, rfc: string) {
+    const cer = this.pemToForgeCert(pem);
     try {
       for (var i = 0; i < cer.subject.attributes.length; i++) {
         var val = cer.subject.attributes[i].value.trim();
@@ -88,9 +88,9 @@ class firmafiel {
   }
 
   //recibe el certificado en formato (forge) y un rfc y devuelve true si la llave publica corresponde con el rfc , del ocontrario devuelve false
-  validaRfcFromForgeCert({ cer, rfc }) {
+  validaRfcFromForgeCert(cer: forge.pki.Certificate, rfc: string) {
     try {
-      for (i = 0; i < cer.subject.attributes.length; i++) {
+      for (let i = 0; i < cer.subject.attributes.length; i++) {
         var val = cer.subject.attributes[i].value.trim();
         if (val == rfc.trim()) {
           return true;
@@ -103,7 +103,7 @@ class firmafiel {
   }
 
   //recibe un buffer de una archivo de llave privada y devuelve la llave privada encryptada en formato pem
-  keyBufferToPem({ derBuffer }) {
+  keyBufferToPem(derBuffer: Buffer) {
     try {
       //recibe un buffer binario que se tiene que convertir a un buffer de node-forge
       var forgeBuffer = forge.util.createBuffer(derBuffer.toString("binary"));
@@ -124,7 +124,7 @@ class firmafiel {
 
   //recibe la llave primaria encriptada en formato pem
   //y devuelve la llave privada (forge) , por lo que necesita el password de la llave privada
-  pemToForgeKey({ pemkey, pass }) {
+  pemToForgeKey(pemkey: forge.pki.PEM, pass: string) {
     var pki = forge.pki;
     //privateKey es la llave privada
     var privateKey = null;
@@ -141,17 +141,15 @@ class firmafiel {
   }
 
   //recibe un buffer de una archivo de llave privada y devuelve la llave privada (forge) , por lo que necesita el password de la llave privada
-  keyBufferToForgeKey({ derBuffer, pass }) {
-    const privatekeypem = this.keyBufferToPem({ derBuffer: derBuffer });
-    return this.pemToForgeKey({ pemkey: privatekeypem, pass: pass });
+  keyBufferToForgeKey(derBuffer: Buffer, pass: string) {
+    const privatekeypem = this.keyBufferToPem(derBuffer);
+    return this.pemToForgeKey(privatekeypem, pass);
   }
 
   //recibe el certificado y la llave privada(formato der binarioo buffer) y el password(string)
   //devuelve true si la llave publica del certificad ocorresponde con la llave publica generada por la llave primaria
-  validaCertificadosFromBuffer({ derpublica, derprivada, passprivada }) {
-    const cert = this.pemToForgeCert({
-      pem: this.certBufferToPem({ derBuffer: derpublica })
-    });
+  validaCertificadosFromBuffer(derpublica: Buffer, derprivada: Buffer, passprivada: string) {
+    const cert = this.pemToForgeCert(this.certBufferToPem(derpublica));
     //recibe un buffer binario que se tiene que convertir a un buffer de node-forge
     var forgeBuffer = forge.util.createBuffer(derprivada.toString("binary"));
     //hay que codificarlo como base64
@@ -183,12 +181,9 @@ class firmafiel {
 
   //recibe el certificado y la llave privada(formato pem) y el password(string)
   //devuelve true si la llave publica del certificad ocorresponde con la llave publica generada por la llave primaria
-  validaCertificadosFromPem({ pempublica, pemprivada, passprivada }) {
-    const cert = this.pemToForgeCert({ pem: pempublica });
-    const privateKey = this.pemToForgeKey({
-      pemkey: pemprivada,
-      pass: passprivada
-    });
+  validaCertificadosFromPem(pempublica: forge.pki.PEM, pemprivada: forge.pki.PEM, passprivada: string) {
+    const cert = this.pemToForgeCert(pempublica);
+    const privateKey = this.pemToForgeKey(pemprivada, passprivada);
     const forgePublicKey = forge.pki.setRsaPublicKey(
       privateKey.n,
       privateKey.e
@@ -201,16 +196,10 @@ class firmafiel {
 
   //recibe el certificado en formato pem ,la llave privada en formato pem(encriptada), el password de la llave privada(para desencriptarla), la cadena a firmar
   //devuelve la cadena firmada en formato pem -----BEGIN PKCS7-----
-  firmarCadena({ pempublica, pemprivada, passprivada, cadena }) {
+  firmarCadena(pempublica: forge.pki.PEM, pemprivada: forge.pki.PEM, passprivada: string, cadena: string) {
     try {
-      if (
-        this.validaCertificadosFromPem({
-          pempublica: pempublica,
-          pemprivada: pemprivada,
-          passprivada: passprivada
-        })
-      ) {
-        const cert = this.pemToForgeCert({ pem: pempublica });
+      if (this.validaCertificadosFromPem(pempublica, pemprivada, passprivada)) {
+        const cert = this.pemToForgeCert(pempublica);
 
         var today = new Date().getTime();
         var from = cert.validity.notBefore.getTime();
@@ -220,10 +209,7 @@ class firmafiel {
           throw "El certificado ha expirado";
         }
 
-        const privateKey = this.pemToForgeKey({
-          pemkey: pemprivada,
-          pass: passprivada
-        });
+        const privateKey = this.pemToForgeKey(pemprivada, passprivada);
         const p7 = forge.pkcs7.createSignedData();
         p7.content = forge.util.createBuffer(cadena, "utf8");
         p7.addCertificate(cert);
@@ -241,7 +227,7 @@ class firmafiel {
     }
   }
   //verifica una firma devuelve true/false recibe la llave publica en formato pem , la cadena que se firmo, y la firma PKCS#7 en formato PEM
-  verificarFirma({ pempublica, cadena, pemfirma }) {
+  verificarFirma(pempublica: forge.pki.PEM, cadena: any, pemfirma) {
     try {
       // pemfirma is the extracted Signature from the S/MIME
       // with added -----BEGIN PKCS7----- around it
