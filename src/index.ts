@@ -46,11 +46,12 @@ class firmafiel {
   }
 
   certBufferToPem(derBuffer: Buffer) {
+    let certPEM: string;
     try {
-      var forgeBuffer = forge.util.createBuffer(derBuffer.toString("binary"));
+      let forgeBuffer = forge.util.createBuffer(derBuffer.toString("binary"));
       //hay que codificarlo como base64
-      var encodedb64 = forge.util.encode64(forgeBuffer.data);
-      var certPEM =
+      let encodedb64 = forge.util.encode64(forgeBuffer.data);
+      certPEM =
         "" +
         "-----BEGIN CERTIFICATE-----\n" +
         encodedb64 +
@@ -64,7 +65,7 @@ class firmafiel {
   //convierte un certificado en formato pem a un certificado forge
   pemToForgeCert(pem: forge.pki.PEM) {
     try {
-      var pki = forge.pki;
+      let pki = forge.pki;
       return pki.certificateFromPem(pem);
     } catch (e) {
       throw "Error al convertir la cadena PEM a un certificado forge";
@@ -75,8 +76,8 @@ class firmafiel {
   validaRfcFromPem(pem: forge.pki.PEM, rfc: string) {
     const cer = this.pemToForgeCert(pem);
     try {
-      for (var i = 0; i < cer.subject.attributes.length; i++) {
-        var val = cer.subject.attributes[i].value.trim();
+      for (let i = 0; i < cer.subject.attributes.length; i++) {
+        let val = cer.subject.attributes[i].value.trim();
         if (val == rfc.trim()) {
           return true;
         }
@@ -91,7 +92,7 @@ class firmafiel {
   validaRfcFromForgeCert(cer: forge.pki.Certificate, rfc: string) {
     try {
       for (let i = 0; i < cer.subject.attributes.length; i++) {
-        var val = cer.subject.attributes[i].value.trim();
+        let val = cer.subject.attributes[i].value.trim();
         if (val == rfc.trim()) {
           return true;
         }
@@ -106,9 +107,9 @@ class firmafiel {
   keyBufferToPem(derBuffer: Buffer) {
     try {
       //recibe un buffer binario que se tiene que convertir a un buffer de node-forge
-      var forgeBuffer = forge.util.createBuffer(derBuffer.toString("binary"));
+      let forgeBuffer = forge.util.createBuffer(derBuffer.toString("binary"));
       //hay que codificarlo como base64
-      var encodedb64 = forge.util.encode64(forgeBuffer.data);
+      let encodedb64 = forge.util.encode64(forgeBuffer.data);
       //se le agregan '-----BEGIN ENCRYPTED PRIVATE KEY-----\r\n' y '-----END ENCRYPTED PRIVATE KEY-----\r\n'
       //pkcs8PEM es la llave privada encriptada hay que desencriptarla con el password
       const pkcs8PEM =
@@ -125,9 +126,9 @@ class firmafiel {
   //recibe la llave primaria encriptada en formato pem
   //y devuelve la llave privada (forge) , por lo que necesita el password de la llave privada
   pemToForgeKey(pemkey: forge.pki.PEM, pass: string) {
-    var pki = forge.pki;
+    let pki = forge.pki;
     //privateKey es la llave privada
-    var privateKey = null;
+    let privateKey = null;
     try {
       privateKey = pki.decryptRsaPrivateKey(pemkey, pass);
     } catch (e) {
@@ -151,9 +152,9 @@ class firmafiel {
   validaCertificadosFromBuffer(derpublica: Buffer, derprivada: Buffer, passprivada: string) {
     const cert = this.pemToForgeCert(this.certBufferToPem(derpublica));
     //recibe un buffer binario que se tiene que convertir a un buffer de node-forge
-    var forgeBuffer = forge.util.createBuffer(derprivada.toString("binary"));
+    let forgeBuffer = forge.util.createBuffer(derprivada.toString("binary"));
     //hay que codificarlo como base64
-    var encodedb64 = forge.util.encode64(forgeBuffer.data);
+    let encodedb64 = forge.util.encode64(forgeBuffer.data);
     //se le agregan '-----BEGIN ENCRYPTED PRIVATE KEY-----\r\n' y '-----END ENCRYPTED PRIVATE KEY-----\r\n'
     //pkcs8PEM es la llave privada encriptarla hay que desencriptarla con el password
     const pkcs8PEM =
@@ -162,9 +163,9 @@ class firmafiel {
       encodedb64 +
       "-----END ENCRYPTED PRIVATE KEY-----\r\n";
 
-    var pki = forge.pki;
+    let pki = forge.pki;
     //privateKey es la llave privada
-    var privateKey = null;
+    let privateKey = null;
     try {
       privateKey = pki.decryptRsaPrivateKey(pkcs8PEM, passprivada);
     } catch (e) {
@@ -201,9 +202,9 @@ class firmafiel {
       if (this.validaCertificadosFromPem(pempublica, pemprivada, passprivada)) {
         const cert = this.pemToForgeCert(pempublica);
 
-        var today = new Date().getTime();
-        var from = cert.validity.notBefore.getTime();
-        var to = cert.validity.notAfter.getTime();
+        let today = new Date().getTime();
+        let from = cert.validity.notBefore.getTime();
+        let to = cert.validity.notAfter.getTime();
 
         if (today < from || today > to) {
           throw "El certificado ha expirado";
@@ -232,18 +233,18 @@ class firmafiel {
       // pemfirma is the extracted Signature from the S/MIME
       // with added -----BEGIN PKCS7----- around it
       let msg = <forge.pkcs7.PkcsSignedData>forge.pkcs7.messageFromPem(pemfirma);
-      //var attrs = msg.rawCapture.authenticatedAttributes; // got the list of auth attrs
-      var sig = msg.rawCapture.signature;
-      //var set = forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SET, true, attrs); // packed them inside of the SET object
-      var buf = Buffer.from(cadena, "binary");
-      //var buf = Buffer.from(cadena, "binary");
+      //let attrs = msg.rawCapture.authenticatedAttributes; // got the list of auth attrs
+      let sig = msg.rawCapture.signature;
+      //let set = forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SET, true, attrs); // packed them inside of the SET object
+      let buf = Buffer.from(cadena, "binary");
+      //let buf = Buffer.from(cadena, "binary");
 
       //esta lógica solo verifica que los dos certificados sean iguales el del mensaje firmado y el proporcionado por el usuario
       //si se utilizan cadenas de certificados entonces habria que deshabilitar esta parte
-      var certfirmado = msg.certificates[0];
-      var certpublico = forge.pki.certificateFromPem(pempublica);
-      var algo1 = hash(certfirmado);
-      var algo2 = hash(certpublico);
+      let certfirmado = msg.certificates[0];
+      let certpublico = forge.pki.certificateFromPem(pempublica);
+      let algo1 = hash(certfirmado);
+      let algo2 = hash(certpublico);
       if (algo1 !== algo2) {
         throw "El certificado del firmado no es el mismo que el certificado proporcionado";
       }
@@ -251,9 +252,9 @@ class firmafiel {
 
       //la verificacion de firmas pkcs#7 no ha sido implementada en node-forge
       //por eso se usa la libreria crypto la cual la resuelve como pkcs#1
-      var verifier = crypto.createVerify("RSA-SHA256");
+      let verifier = crypto.createVerify("RSA-SHA256");
       verifier.update(buf);
-      var verified = verifier.verify(
+      let verified = verifier.verify(
         forge.pki.certificateToPem(certpublico),
         sig,
         "binary"
@@ -270,7 +271,7 @@ class firmafiel {
   //que pasamos via key , value
   // async ocspAsync({ issuer, pem, key, value }) {
   //   return new Promise(function(resolve, reject) {
-  //     var loquesea = ocsp.check(
+  //     let loquesea = ocsp.check(
   //       {
   //         cert: pem,
   //         issuer: issuer
@@ -286,12 +287,12 @@ class firmafiel {
   //recibe el certificado en formato PEM
   // async validaOCSP({ pem }) {
   //   //const buf1 = Buffer.from(pem);
-  //   var arrayLength = this.acs.length;
-  //   for (var i = 0; i < arrayLength; i++) {
-  //     for (var [key, value] of this.map) {
+  //   let arrayLength = this.acs.length;
+  //   for (let i = 0; i < arrayLength; i++) {
+  //     for (let [key, value] of this.map) {
   //       try {
-  //         var certdata = this.mapcerts.get(this.acs[i]);
-  //         var respuestaOCSP = await this.ocspAsync({
+  //         let certdata = this.mapcerts.get(this.acs[i]);
+  //         let respuestaOCSP = await this.ocspAsync({
   //           issuer: certdata,
   //           pem: pem,
   //           key: key,
