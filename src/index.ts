@@ -227,11 +227,11 @@ class firmafiel {
     }
   }
   //verifica una firma devuelve true/false recibe la llave publica en formato pem , la cadena que se firmo, y la firma PKCS#7 en formato PEM
-  verificarFirma(pempublica: forge.pki.PEM, cadena: any, pemfirma) {
+  verificarFirma(pempublica: forge.pki.PEM, cadena: any, pemfirma: forge.pki.PEM) {
     try {
       // pemfirma is the extracted Signature from the S/MIME
       // with added -----BEGIN PKCS7----- around it
-      var msg = forge.pkcs7.messageFromPem(pemfirma);
+      let msg = <forge.pkcs7.PkcsSignedData>forge.pkcs7.messageFromPem(pemfirma);
       //var attrs = msg.rawCapture.authenticatedAttributes; // got the list of auth attrs
       var sig = msg.rawCapture.signature;
       //var set = forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SET, true, attrs); // packed them inside of the SET object
