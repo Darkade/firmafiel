@@ -1,4 +1,4 @@
-import * as crypto from "crypto";
+const crypto = require('crypto');
 import hash from "object-hash";
 import axios from "axios";
 import * as forge from "node-forge";
