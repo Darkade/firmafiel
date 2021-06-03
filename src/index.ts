@@ -163,20 +163,19 @@ class firmafiel {
       encodedb64 +
       "-----END ENCRYPTED PRIVATE KEY-----\r\n";
 
-    let pki = forge.pki;
     //privateKey es la llave privada
     let privateKey = null;
     try {
-      privateKey = pki.decryptRsaPrivateKey(pkcs8PEM, passprivada);
+      privateKey = forge.pki.decryptRsaPrivateKey(pkcs8PEM, passprivada);
     } catch (e) {
       throw "Error en la contraseña";
     }
     if (!privateKey) {
       throw "Error en la contraseña";
     }
-    const forgePublicKey = pki.setRsaPublicKey(privateKey.n, privateKey.e);
+    const forgePublicKey = forge.pki.setRsaPublicKey(privateKey.n, privateKey.e);
     return (
-      pki.publicKeyToPem(forgePublicKey) === pki.publicKeyToPem(cert.publicKey)
+      forge.pki.publicKeyToPem(forgePublicKey) === forge.pki.publicKeyToPem(cert.publicKey)
     );
   }
 
@@ -228,43 +227,43 @@ class firmafiel {
     }
   }
   //verifica una firma devuelve true/false recibe la llave publica en formato pem , la cadena que se firmo, y la firma PKCS#7 en formato PEM
-  verificarFirma(pempublica: forge.pki.PEM, cadena: any, pemfirma: forge.pki.PEM) {
-    try {
-      // pemfirma is the extracted Signature from the S/MIME
-      // with added -----BEGIN PKCS7----- around it
-      let msg = <forge.pkcs7.PkcsSignedData>forge.pkcs7.messageFromPem(pemfirma);
-      //let attrs = msg.rawCapture.authenticatedAttributes; // got the list of auth attrs
-      let sig = msg.rawCapture.signature;
-      //let set = forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SET, true, attrs); // packed them inside of the SET object
-      let buf = Buffer.from(cadena, "binary");
-      //let buf = Buffer.from(cadena, "binary");
-
-      //esta lógica solo verifica que los dos certificados sean iguales el del mensaje firmado y el proporcionado por el usuario
-      //si se utilizan cadenas de certificados entonces habria que deshabilitar esta parte
-      let certfirmado = msg.certificates[0];
-      let certpublico = forge.pki.certificateFromPem(pempublica);
-      let algo1 = hash(certfirmado);
-      let algo2 = hash(certpublico);
-      if (algo1 !== algo2) {
-        throw "El certificado del firmado no es el mismo que el certificado proporcionado";
-      }
-      //esta lógica solo verifica que los dos certificados sean iguales el del mensaje firmado y el proporcionado por el usuario
-
-      //la verificacion de firmas pkcs#7 no ha sido implementada en node-forge
-      //por eso se usa la libreria crypto la cual la resuelve como pkcs#1
-      let verifier = crypto.createVerify("RSA-SHA256");
-      verifier.update(buf);
-      let verified = verifier.verify(
-        forge.pki.certificateToPem(certpublico),
-        sig,
-        "binary"
-      );
-
-      return verified;
-    } catch (e) {
-      return { status: "error al verificar cadena" };
-    }
-  }
+  // verificarFirma(pempublica: forge.pki.PEM, cadena: any, pemfirma: forge.pki.PEM) {
+  //   try {
+  //     // pemfirma is the extracted Signature from the S/MIME
+  //     // with added -----BEGIN PKCS7----- around it
+  //     let msg = forge.pkcs7.messageFromPem(pemfirma);
+  //     //let attrs = msg.rawCapture.authenticatedAttributes; // got the list of auth attrs
+  //     let sig = msg.rawCapture.signature;
+  //     //let set = forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SET, true, attrs); // packed them inside of the SET object
+  //     let buf = Buffer.from(cadena, "binary");
+  //     //let buf = Buffer.from(cadena, "binary");
+  //
+  //     //esta lógica solo verifica que los dos certificados sean iguales el del mensaje firmado y el proporcionado por el usuario
+  //     //si se utilizan cadenas de certificados entonces habria que deshabilitar esta parte
+  //     let certfirmado = msg.certificates[0];
+  //     let certpublico = forge.pki.certificateFromPem(pempublica);
+  //     let algo1 = hash(certfirmado);
+  //     let algo2 = hash(certpublico);
+  //     if (algo1 !== algo2) {
+  //       throw "El certificado del firmado no es el mismo que el certificado proporcionado";
+  //     }
+  //     //esta lógica solo verifica que los dos certificados sean iguales el del mensaje firmado y el proporcionado por el usuario
+  //
+  //     //la verificacion de firmas pkcs#7 no ha sido implementada en node-forge
+  //     //por eso se usa la libreria crypto la cual la resuelve como pkcs#1
+  //     let verifier = crypto.createVerify("RSA-SHA256");
+  //     verifier.update(buf);
+  //     let verified = verifier.verify(
+  //       forge.pki.certificateToPem(certpublico),
+  //       sig,
+  //       "binary"
+  //     );
+  //
+  //     return verified;
+  //   } catch (e) {
+  //     return { status: "error al verificar cadena" };
+  //   }
+  // }
 
   //la libreria ocsp no permite cambiar la url ni el host del request OCSP porque los busca en el certificado.
   //falta implementar el protocolo ocsp en browser solo se tendria que modificar la libreria para que agrege las url y host que deseamos
